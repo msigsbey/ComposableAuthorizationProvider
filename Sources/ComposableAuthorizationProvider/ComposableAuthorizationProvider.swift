@@ -10,11 +10,15 @@ import ComposableArchitecture
 
 public struct AuthorizationControllerClient {
     public var performRequest: (ASAuthorization.OpenIDOperation, [ASAuthorization.Scope]) -> Effect<DelegateEvent, Never>
+    public var performExistingAccountSetup: Effect<DelegateEvent, Never>
+    public var performCustomAuthorization: ([ASAuthorizationCustomMethod]) -> Effect<DelegateEvent, Never>
+    public var updatePresentationContext: (UIWindowScene) -> Effect<Never, Never>
 
     public enum DelegateEvent: Equatable {
         case register(ASAuthorizationAppleIDCredential)
         case signIn(ASAuthorizationAppleIDCredential)
         case signInPassword(ASPasswordCredential)
+        case didComplete(ASAuthorizationCustomMethod)
         case didFailWithError(NSError)
     }
 

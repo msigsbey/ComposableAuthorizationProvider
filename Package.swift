@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "ComposableAuthorizationProvider",
     platforms: [
-        .iOS(.v13),
+        .iOS(.v15),
         .macOS(.v10_15),
         .tvOS(.v15),
     ],
