@@ -29,6 +29,7 @@ extension AuthorizationProvider {
     }
 }
 
+#if os(tvOS)
 extension AuthorizationControllerClient {
   public static let live = Self(
     performRequest: { operation, scopes in
@@ -63,6 +64,12 @@ extension AuthorizationControllerClient {
     }
     .share()
     .eraseToEffect(),
+    updatePresentationContext: { window in
+            .fireAndForget {
+                let provider = PresentationContextProvider(window: window)
+                controller?.presentationContextProvider = provider
+            }
+    },
     performCustomAuthorization: { methods in
             .run { subscriber in
                 let request = ASAuthorizationAppleIDProvider().createRequest()
@@ -79,7 +86,46 @@ extension AuthorizationControllerClient {
             }
             .share()
             .eraseToEffect()
+    }
+  )
+
+    private static var controller: ASAuthorizationController?
+}
+#elseif os(iOS)
+extension AuthorizationControllerClient {
+  public static let live = Self(
+    performRequest: { operation, scopes in
+            .run { subscriber in
+                let request = ASAuthorizationAppleIDProvider().createRequest()
+                request.requestedOperation = operation
+                request.requestedScopes = scopes
+                controller = ASAuthorizationController(authorizationRequests: [request])
+                var delegate: Optional = Delegate(subscriber: subscriber)
+                controller?.delegate = delegate
+                controller?.performRequests()
+
+                return AnyCancellable {
+                    delegate = nil
+                    controller = nil
+                }
+            }
+            .share()
+            .eraseToEffect()
     },
+    performExistingAccountSetup: .run { subscriber in
+        let request = ASAuthorizationAppleIDProvider().createRequest()
+        controller = ASAuthorizationController(authorizationRequests: [request])
+        var delegate: Optional = Delegate(subscriber: subscriber)
+        controller?.delegate = delegate
+        controller?.performRequests()
+
+        return AnyCancellable {
+            delegate = nil
+            controller = nil
+        }
+    }
+    .share()
+    .eraseToEffect(),
     updatePresentationContext: { window in
             .fireAndForget {
                 let provider = PresentationContextProvider(window: window)
@@ -90,8 +136,48 @@ extension AuthorizationControllerClient {
 
     private static var controller: ASAuthorizationController?
 }
-
+#else
 extension AuthorizationControllerClient {
+  public static let live = Self(
+    performRequest: { operation, scopes in
+            .run { subscriber in
+                let request = ASAuthorizationAppleIDProvider().createRequest()
+                request.requestedOperation = operation
+                request.requestedScopes = scopes
+                controller = ASAuthorizationController(authorizationRequests: [request])
+                var delegate: Optional = Delegate(subscriber: subscriber)
+                controller?.delegate = delegate
+                controller?.performRequests()
+
+                return AnyCancellable {
+                    delegate = nil
+                    controller = nil
+                }
+            }
+            .share()
+            .eraseToEffect()
+    },
+    performExistingAccountSetup: .run { subscriber in
+        let request = ASAuthorizationAppleIDProvider().createRequest()
+        controller = ASAuthorizationController(authorizationRequests: [request])
+        var delegate: Optional = Delegate(subscriber: subscriber)
+        controller?.delegate = delegate
+        controller?.performRequests()
+
+        return AnyCancellable {
+            delegate = nil
+            controller = nil
+        }
+    }
+    .share()
+    .eraseToEffect()
+  )
+
+    private static var controller: ASAuthorizationController?
+}
+#endif
+extension AuthorizationControllerClient {
+    #if os(iOS) || os(tvOS)
     final class PresentationContextProvider: NSObject, ASAuthorizationControllerPresentationContextProviding {
         let window: UIWindowScene
 
@@ -107,8 +193,7 @@ extension AuthorizationControllerClient {
             return ASPresentationAnchor(windowScene: window)
         }
     }
-
-
+    #endif
     final class Delegate: NSObject, ASAuthorizationControllerDelegate {
         let subscriber: Effect<DelegateEvent, Never>.Subscriber
 
@@ -146,6 +231,7 @@ extension AuthorizationControllerClient {
             self.subscriber.send(completion: .finished)
         }
 
+        #if os(tvOS)
         func authorizationController(
             _ controller: ASAuthorizationController,
             didCompleteWithCustomMethod method: ASAuthorizationCustomMethod
@@ -153,5 +239,6 @@ extension AuthorizationControllerClient {
             self.subscriber.send(.didComplete(method))
             self.subscriber.send(completion: .finished)
         }
+        #endif
     }
 }

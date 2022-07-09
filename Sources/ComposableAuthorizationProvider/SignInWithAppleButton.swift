@@ -8,6 +8,7 @@
 import SwiftUI
 import AuthenticationServices
 
+#if os(iOS) || os(tvOS)
 public struct SignInWithAppleButton: UIViewRepresentable {
     public let type: ASAuthorizationAppleIDButton.ButtonType
     public var style: ASAuthorizationAppleIDButton.Style
@@ -36,3 +37,4 @@ public struct SignInWithAppleButton: UIViewRepresentable {
         // NOOP
     }
 }
+#endif
