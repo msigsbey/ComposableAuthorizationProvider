@@ -11,31 +11,33 @@ import ComposableArchitecture
 extension AuthorizationProvider {
     public static var noop: Self {
         return Self(
-            authorizationController: .noop
+            authorizationController: .noop,
+            getCredentialState: { userId in
+                    .none
+            }
         )
     }
 
     public static var failing: Self {
         return Self(
-            authorizationController: .failing
+            authorizationController: .failing,
+            getCredentialState: { userId in
+                    .failing("\(Self.self).getCredentialState is unimplemented")
+            }
         )
     }
 }
 
 extension AuthorizationControllerClient {
     public static let noop = Self(
-        present: { operation, scopes in
-                .none
-        }, getCredentialState: { userId in
+        performRequest: { operation, scopes in
                 .none
         }
     )
 
     public static let failing = Self(
-        present: { operation, scopes in
+        performRequest: { operation, scopes in
                 .failing("\(Self.self).present is unimplemented")
-        }, getCredentialState: { userId in
-                .failing("\(Self.self).getCredentialState is unimplemented")
         }
     )
 }

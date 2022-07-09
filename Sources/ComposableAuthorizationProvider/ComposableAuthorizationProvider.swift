@@ -9,8 +9,7 @@ import AuthenticationServices
 import ComposableArchitecture
 
 public struct AuthorizationControllerClient {
-    public var present: (ASAuthorization.OpenIDOperation, [ASAuthorization.Scope]) -> Effect<DelegateEvent, Never>
-    public var getCredentialState: (String) -> Effect<State, Error>
+    public var performRequest: (ASAuthorization.OpenIDOperation, [ASAuthorization.Scope]) -> Effect<DelegateEvent, Never>
 
     public enum DelegateEvent: Equatable {
         case register(ASAuthorizationAppleIDCredential)
@@ -23,6 +22,11 @@ public struct AuthorizationControllerClient {
         static let operation: ASAuthorization.OpenIDOperation = .operationImplicit
         static let scopes: [ASAuthorization.Scope] = [.fullName, .email]
     }
+}
+
+public struct AuthorizationProvider {
+    public var authorizationController: AuthorizationControllerClient
+    public var getCredentialState: (String) -> Effect<State, Error>
 
     public struct State {
         public var credentialState: ASAuthorizationAppleIDProvider.CredentialState
@@ -33,8 +37,4 @@ public struct AuthorizationControllerClient {
             self.credentialState = credentialState
         }
     }
-}
-
-public struct AuthorizationProvider {
-    public var authorizationController: AuthorizationControllerClient
 }

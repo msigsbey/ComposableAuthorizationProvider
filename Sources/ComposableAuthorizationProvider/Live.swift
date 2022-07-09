@@ -13,14 +13,25 @@ import Combine
 extension AuthorizationProvider {
     public static var live: Self {
       return Self(
-        authorizationController: .live
+        authorizationController: .live,
+        getCredentialState: { userId in
+            .future { callback in
+                ASAuthorizationAppleIDProvider().getCredentialState(forUserID: userId) { credentialState, error in
+                    if let error = error {
+                        callback(.failure(error))
+                    }
+
+                    callback(.success(State(credentialState: credentialState)))
+                }
+            }
+        }
       )
     }
 }
 
 extension AuthorizationControllerClient {
   public static let live = Self(
-    present: { operation, scopes in
+    performRequest: { operation, scopes in
             .run { subscriber in
                 let provider = ASAuthorizationAppleIDProvider()
                 let request = provider.createRequest()
@@ -38,16 +49,6 @@ extension AuthorizationControllerClient {
             }
             .share()
             .eraseToEffect()
-    }, getCredentialState: { userId in
-        .future { callback in
-            ASAuthorizationAppleIDProvider().getCredentialState(forUserID: userId) { credentialState, error in
-                if let error = error {
-                    callback(.failure(error))
-                }
-
-                callback(.success(State(credentialState: credentialState)))
-            }
-        }
     }
   )
 

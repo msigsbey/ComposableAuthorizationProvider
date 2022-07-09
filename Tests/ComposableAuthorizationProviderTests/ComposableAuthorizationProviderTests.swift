@@ -6,6 +6,8 @@ final class ComposableAuthorizationProviderTests: XCTestCase {
     func testExample() {
         let provider: AuthorizationProvider = .live
 
-        provider.authorizationController.getCredentialState("")
+        provider.getCredentialState("")
+
+        provider.authorizationController.performRequest(.operationImplicit, [.fullName, .email])
     }
 }
