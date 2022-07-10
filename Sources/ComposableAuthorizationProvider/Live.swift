@@ -32,11 +32,11 @@ extension AuthorizationProvider {
 #if os(tvOS)
 extension AuthorizationControllerClient {
   public static let live = Self(
-    performRequest: { operation, scopes in
+    performRequest: { options in
             .run { subscriber in
                 let request = ASAuthorizationAppleIDProvider().createRequest()
-                request.requestedOperation = operation
-                request.requestedScopes = scopes
+                request.requestedOperation = options.operation
+                request.requestedScopes = options.scopes
                 controller = ASAuthorizationController(authorizationRequests: [request])
                 var delegate: Optional = Delegate(subscriber: subscriber)
                 controller?.delegate = delegate
@@ -94,11 +94,11 @@ extension AuthorizationControllerClient {
 #elseif os(iOS)
 extension AuthorizationControllerClient {
   public static let live = Self(
-    performRequest: { operation, scopes in
+    performRequest: { options in
             .run { subscriber in
                 let request = ASAuthorizationAppleIDProvider().createRequest()
-                request.requestedOperation = operation
-                request.requestedScopes = scopes
+                request.requestedOperation = options.operation
+                request.requestedScopes = options.scopes
                 controller = ASAuthorizationController(authorizationRequests: [request])
                 var delegate: Optional = Delegate(subscriber: subscriber)
                 controller?.delegate = delegate
@@ -139,11 +139,11 @@ extension AuthorizationControllerClient {
 #else
 extension AuthorizationControllerClient {
   public static let live = Self(
-    performRequest: { operation, scopes in
+    performRequest: { options in
             .run { subscriber in
                 let request = ASAuthorizationAppleIDProvider().createRequest()
-                request.requestedOperation = operation
-                request.requestedScopes = scopes
+                request.requestedOperation = options.operation
+                request.requestedScopes = options.scopes
                 controller = ASAuthorizationController(authorizationRequests: [request])
                 var delegate: Optional = Delegate(subscriber: subscriber)
                 controller?.delegate = delegate

@@ -31,7 +31,7 @@ extension AuthorizationProvider {
 #if os(tvOS)
 extension AuthorizationControllerClient {
     public static let noop = Self(
-        performRequest: { operation, scopes in
+        performRequest: { options in
             .none
         },
         performExistingAccountSetup: .none,
@@ -44,7 +44,7 @@ extension AuthorizationControllerClient {
     )
 
     public static let failing = Self(
-        performRequest: { operation, scopes in
+        performRequest: { options in
             .failing("\(Self.self).performRequest is unimplemented")
         },
         performExistingAccountSetup: .failing("\(Self.self).performExistingAccountSetup is unimplemented"),
@@ -59,7 +59,7 @@ extension AuthorizationControllerClient {
 #elseif os(iOS)
 extension AuthorizationControllerClient {
     public static let noop = Self(
-        performRequest: { operation, scopes in
+        performRequest: { options in
             .none
         },
         performExistingAccountSetup: .none,
@@ -69,7 +69,7 @@ extension AuthorizationControllerClient {
     )
 
     public static let failing = Self(
-        performRequest: { operation, scopes in
+        performRequest: { options in
             .failing("\(Self.self).performRequest is unimplemented")
         },
         performExistingAccountSetup: .failing("\(Self.self).performExistingAccountSetup is unimplemented"),
@@ -81,14 +81,14 @@ extension AuthorizationControllerClient {
 #else
 extension AuthorizationControllerClient {
     public static let noop = Self(
-        performRequest: { operation, scopes in
+        performRequest: { options in
             .none
         },
         performExistingAccountSetup: .none
     )
 
     public static let failing = Self(
-        performRequest: { operation, scopes in
+        performRequest: { options in
             .failing("\(Self.self).performRequest is unimplemented")
         },
         performExistingAccountSetup: .failing("\(Self.self).performExistingAccountSetup is unimplemented")
