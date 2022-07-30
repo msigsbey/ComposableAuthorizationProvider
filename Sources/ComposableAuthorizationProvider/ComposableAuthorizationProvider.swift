@@ -21,8 +21,18 @@ public struct AuthorizationControllerClient {
     #endif
 
     public enum DelegateEvent: Equatable {
-        case register(ASAuthorizationAppleIDCredential)
-        case signIn(ASAuthorizationAppleIDCredential)
+        public static func == (lhs: AuthorizationControllerClient.DelegateEvent, rhs: AuthorizationControllerClient.DelegateEvent) -> Bool {
+          switch (lhs, rhs) {
+              case (let .register(lhsCredential), let .register(rhsCredential)):
+                    return lhsCredential.user == rhsCredential.user
+              case (let .signIn(lhsCredential), let .signIn(rhsCredential)):
+                    return lhsCredential.user == rhsCredential.user
+              default:
+                  return lhs == rhs
+              }
+        }
+        case register(any AppleIDCredential)
+        case signIn(any AppleIDCredential)
         case signInPassword(ASPasswordCredential)
         case didFailWithError(NSError)
         #if os(tvOS)
@@ -47,6 +57,22 @@ public struct AuthorizationControllerClient {
             scopes: [.fullName, .email]
         )
     }
+}
+
+public protocol AppleIDCredential: Equatable {
+  var identityToken: Data? { get }
+  var authorizationCode: Data? { get }
+  var state: String? { get }
+  var user: String { get }
+  var email: String? { get }
+  var fullName: PersonNameComponents? { get }
+  var realUserStatus: ASUserDetectionStatus { get }
+}
+
+extension ASAuthorizationAppleIDCredential: AppleIDCredential {}
+
+protocol Authorization {
+  var credential: ASAuthorizationCredential { get }
 }
 
 public struct AuthorizationProvider {

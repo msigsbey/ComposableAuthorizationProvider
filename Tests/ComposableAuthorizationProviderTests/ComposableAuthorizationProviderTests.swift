@@ -73,7 +73,7 @@ final class ComposableAuthorizationProviderTests: XCTestCase {
         }
     }
 
-    func testPerformRequestMock() {
+    func testPerformRequestMockSignInPassword() {
         let mockDelegate = PassthroughSubject<AuthorizationControllerClient.DelegateEvent, Never>()
         let provider: AuthorizationProvider = update(.live) {
             $0.authorizationController = update(.live) {
@@ -116,6 +116,58 @@ final class ComposableAuthorizationProviderTests: XCTestCase {
             cancellable.cancel()
         }
     }
+  
+  private struct Credential: AppleIDCredential {
+    var identityToken: Data?
+    var authorizationCode: Data?
+    var state: String?
+    var user: String
+    var email: String?
+    var fullName: PersonNameComponents?
+    var realUserStatus: ASUserDetectionStatus
+  }
+
+  
+  func testPerformRequestMockSignIn() {
+      let mockDelegate = PassthroughSubject<AuthorizationControllerClient.DelegateEvent, Never>()
+      let provider: AuthorizationProvider = update(.live) {
+          $0.authorizationController = update(.live) {
+              $0.performRequest = { options in
+                  return mockDelegate.eraseToEffect()
+              }
+          }
+      }
+    let credential = Credential(user: "12345", realUserStatus: ASUserDetectionStatus.unknown)
+    let expectedResult: AuthorizationControllerClient.DelegateEvent = .signIn(credential)
+      var result: AuthorizationControllerClient.DelegateEvent?
+      let expectation = self.expectation(description: "Finished request")
+
+      let cancellable = provider.authorizationController
+          .performRequest(.default)
+          .sink(receiveCompletion: { result in
+              switch result {
+              case .failure:
+                  XCTFail("Failed request")
+              case .finished:
+                  expectation.fulfill()
+              }
+          }) { value in
+              result = value
+          }
+
+      mockDelegate.send(expectedResult)
+      mockDelegate.send(completion: .finished)
+
+      self.waitForExpectations(timeout: 1.0) { error in
+          XCTAssertNil(error)
+          XCTAssert(result == expectedResult)
+          if case let .signIn(credential) = result {
+              XCTAssert(credential.user == "12345")
+              XCTAssert(credential.realUserStatus == ASUserDetectionStatus.unknown)
+          }
+          cancellable.cancel()
+      }
+  }
 
 #if os(tvOS)
     func testCustomMethod() {
