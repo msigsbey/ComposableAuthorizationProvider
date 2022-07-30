@@ -206,7 +206,7 @@ extension AuthorizationControllerClient {
             didCompleteWithAuthorization authorization: ASAuthorization
         ){
             switch authorization.credential {
-            case let appleIdCredential as ASAuthorizationAppleIDCredential:
+            case let appleIdCredential as any AppleIDCredential:
                 if let _ = appleIdCredential.email, let _ = appleIdCredential.fullName {
                     subscriber.send(.register(appleIdCredential))
                 } else {
