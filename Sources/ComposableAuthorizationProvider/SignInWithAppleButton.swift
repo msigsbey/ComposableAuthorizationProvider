@@ -9,6 +9,7 @@ import SwiftUI
 import AuthenticationServices
 
 #if os(iOS) || os(tvOS)
+/// A SwiftUI enabled [ASAuthorizationAppleIDButton](https://developer.apple.com/documentation/authenticationservices/asauthorizationappleidbutton).
 public struct SignInWithAppleButton: UIViewRepresentable {
     public let type: ASAuthorizationAppleIDButton.ButtonType
     public var style: ASAuthorizationAppleIDButton.Style

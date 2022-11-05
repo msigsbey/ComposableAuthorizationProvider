@@ -9,11 +9,13 @@ let package = Package(
         .iOS(.v15),
         .macOS(.v10_15),
         .tvOS(.v15),
+        .watchOS(.v6)
     ],
     products: [
         .library(
             name: "ComposableAuthorizationProvider",
-            targets: ["ComposableAuthorizationProvider"]),
+            targets: ["ComposableAuthorizationProvider"]
+        ),
     ],
     dependencies: [
         .package(
@@ -29,7 +31,10 @@ let package = Package(
         .target(
             name: "ComposableAuthorizationProvider",
             dependencies: [
-                .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                .product(
+                    name: "ComposableArchitecture",
+                    package: "swift-composable-architecture"
+                ),
             ]
         ),
         .testTarget(

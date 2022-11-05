@@ -54,7 +54,7 @@ final class ComposableAuthorizationProviderTests: XCTestCase {
         let expectation = self.expectation(description: "Finished request")
 
         let cancellable = provider.authorizationController
-            .performRequest(.default)
+            .performRequest(.standard)
             .sink(receiveCompletion: { result in
                 switch result {
                 case .failure:
@@ -91,7 +91,7 @@ final class ComposableAuthorizationProviderTests: XCTestCase {
         let expectation = self.expectation(description: "Finished request")
 
         let cancellable = provider.authorizationController
-            .performRequest(.default)
+            .performRequest(.standard)
             .sink(receiveCompletion: { result in
                 switch result {
                 case .failure:

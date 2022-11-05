@@ -12,7 +12,7 @@ ComposableAuthorizationProvider is a composable component built with the [Swift 
 
 ComposableAuthorizationProvider is available via [Swift Package Manager](https://swift.org/package-manager/)
 
-## Usage 
+## Usage
 
 `ComposableAuthorizationProvider` gives you access to a new provider called `AuthorizationProvider`. It can be integrated within your composable app like this : 
 
@@ -48,11 +48,11 @@ public let reducer = Reducer<SomeState, SomeAction, SomeEnvironment>.combine(
                 // TODO: Decide when you want to perform credential challenges
                 
                 // Make a credential challenge
-                environment.authorizationProvider.authorizationController.performRequest(.default).map(SomeAction.authorizationProvider)
+                environment.authorizationProvider.authorizationController.performRequest(.standard).map(SomeAction.authorizationProvider)
             }
         case .someSignInAction:
             // Make a credential challenge
-            return environment.authorizationProvider.authorizationController.performRequest(.default).map(SomeAction.authorizationProvider)
+            return environment.authorizationProvider.authorizationController.performRequest(.standard).map(SomeAction.authorizationProvider)
         }
     },
     ...
