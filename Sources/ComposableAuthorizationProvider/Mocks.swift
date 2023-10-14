@@ -8,12 +8,23 @@
 import Foundation
 import ComposableArchitecture
 
+enum AuthorizationProviderError: Error, CustomStringConvertible {
+    case unimplemented(String)
+
+    var description: String {
+        switch self {
+        case .unimplemented(let string):
+            return string + " is unimplemented"
+        }
+    }
+}
+
 extension AuthorizationProvider {
     public static var noop: Self {
         return Self(
             authorizationController: .noop,
             getCredentialState: { userId in
-                    .none
+                try await Task.never()
             }
         )
     }
@@ -22,7 +33,7 @@ extension AuthorizationProvider {
         return Self(
             authorizationController: .failing,
             getCredentialState: { userId in
-                    .failing("\(Self.self).getCredentialState is unimplemented")
+                throw AuthorizationProviderError.unimplemented("\(Self.self).getCredentialState")
             }
         )
     }
@@ -32,27 +43,29 @@ extension AuthorizationProvider {
 extension AuthorizationControllerClient {
     public static let noop = Self(
         performRequest: { options in
-            .none
+            try await Task.never()
         },
-        performExistingAccountSetup: .none,
+        performExistingAccountSetup: {
+            try await Task.never()
+        },
         updatePresentationContext: { window in
-            .none
+            try? await Task.never()
         },
         performCustomAuthorization: { methods in
-            .none
+            try await Task.never()
         }
     )
 
     public static let failing = Self(
         performRequest: { options in
-            .failing("\(Self.self).performRequest is unimplemented")
+            unimplemented("\(Self.self).performRequest")
         },
-        performExistingAccountSetup: .failing("\(Self.self).performExistingAccountSetup is unimplemented"),
+        performExistingAccountSetup: unimplemented("\(Self.self).performExistingAccountSetup"),
         updatePresentationContext: { window in
-            .failing("\(Self.self).updatePresentationContext is unimplemented")
+            unimplemented("\(Self.self).updatePresentationContext")
         },
         performCustomAuthorization: { methods in
-            .failing("\(Self.self).performCustomAuthorization is unimplemented")
+            unimplemented("\(Self.self).performCustomAuthorization")
         }
     )
 }
@@ -60,21 +73,23 @@ extension AuthorizationControllerClient {
 extension AuthorizationControllerClient {
     public static let noop = Self(
         performRequest: { options in
-            .none
+            try await Task.never()
         },
-        performExistingAccountSetup: .none,
+        performExistingAccountSetup: {
+            try await Task.never()
+        },
         updatePresentationContext: { window in
-            .none
+            try? await Task.never()
         }
     )
 
     public static let failing = Self(
         performRequest: { options in
-            .failing("\(Self.self).performRequest is unimplemented")
+            unimplemented("\(Self.self).performRequest")
         },
-        performExistingAccountSetup: .failing("\(Self.self).performExistingAccountSetup is unimplemented"),
+        performExistingAccountSetup: unimplemented("\(Self.self).performExistingAccountSetup"),
         updatePresentationContext: { window in
-            .failing("\(Self.self).updatePresentationContext is unimplemented")
+            unimplemented("\(Self.self).updatePresentationContext")
         }
     )
 }
@@ -82,16 +97,19 @@ extension AuthorizationControllerClient {
 extension AuthorizationControllerClient {
     public static let noop = Self(
         performRequest: { options in
-            .none
+            try await Task.never()
         },
-        performExistingAccountSetup: .none
+        performExistingAccountSetup: {
+            try await Task.never()
+        }
     )
 
     public static let failing = Self(
         performRequest: { options in
-            .failing("\(Self.self).performRequest is unimplemented")
+            unimplemented("\(Self.self).performRequest")
         },
-        performExistingAccountSetup: .failing("\(Self.self).performExistingAccountSetup is unimplemented")
+        performExistingAccountSetup: unimplemented("\(Self.self).performExistingAccountSetup")
+
     )
 }
 #endif

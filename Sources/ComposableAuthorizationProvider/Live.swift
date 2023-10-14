@@ -8,176 +8,177 @@
 import Foundation
 import AuthenticationServices
 import ComposableArchitecture
-import Combine
 
 extension AuthorizationProvider {
     public static var live: Self {
-      return Self(
-        authorizationController: .live,
-        getCredentialState: { userId in
-            .future { callback in
-                ASAuthorizationAppleIDProvider().getCredentialState(forUserID: userId) { credentialState, error in
-                    if let error = error {
-                        callback(.failure(error))
-                    }
+        return Self(
+            authorizationController: .live,
+            getCredentialState: { userId in
+                try await withCheckedThrowingContinuation { continuation in
+                    ASAuthorizationAppleIDProvider().getCredentialState(forUserID: userId) { credentialState, error in
+                        if let error = error {
+                            continuation.resume(throwing: error)
+                        }
 
-                    callback(.success(State(credentialState: credentialState)))
+                        continuation.resume(returning: State(credentialState: credentialState))
+                    }
                 }
             }
-        }
-      )
+        )
     }
 }
 
 #if os(tvOS)
 extension AuthorizationControllerClient {
-  public static let live = Self(
-    performRequest: { options in
-            .run { subscriber in
+    public static let live = Self(
+        performRequest: { options in
+            let stream = AsyncThrowingStream<AuthorizationEvent, Error> { continuation in
                 let request = ASAuthorizationAppleIDProvider().createRequest()
                 request.requestedOperation = options.operation
                 request.requestedScopes = options.scopes
-                controller = ASAuthorizationController(authorizationRequests: [request])
-                var delegate: Optional = Delegate(subscriber: subscriber)
+                let delegate = Observer(continuation: continuation)
                 controller?.delegate = delegate
                 controller?.performRequests()
-
-                return AnyCancellable {
-                    delegate = nil
+                continuation.onTermination = { [request = UncheckedSendable(request)] _ in
                     controller = nil
+                    _ = delegate
                 }
             }
-            .share()
-            .eraseToEffect()
-    },
-    performExistingAccountSetup: .run { subscriber in
-        let request = ASAuthorizationAppleIDProvider().createRequest()
-        controller = ASAuthorizationController(authorizationRequests: [request])
-        var delegate: Optional = Delegate(subscriber: subscriber)
-        controller?.delegate = delegate
-        controller?.performRequests()
-
-        return AnyCancellable {
-            delegate = nil
-            controller = nil
-        }
-    }
-    .share()
-    .eraseToEffect(),
-    updatePresentationContext: { window in
-            .fireAndForget {
-                let provider = PresentationContextProvider(window: window)
-                controller?.presentationContextProvider = provider
+            guard let response = try await stream.first(where: { _ in true })
+            else { throw CancellationError() }
+            return response
+        },
+        performExistingAccountSetup: {
+            let stream = AsyncThrowingStream<AuthorizationEvent, Error> { continuation in
+                let request = ASAuthorizationAppleIDProvider().createRequest()
+                controller = ASAuthorizationController(authorizationRequests: [request])
+                let delegate = Observer(continuation: continuation)
+                controller?.delegate = delegate
+                controller?.performRequests()
+                continuation.onTermination = { [request = UncheckedSendable(request)] _ in
+                    controller = nil
+                    _ = delegate
+                }
             }
-    },
-    performCustomAuthorization: { methods in
-            .run { subscriber in
+            guard let response = try await stream.first(where: { _ in true })
+            else { throw CancellationError() }
+            return response
+        },
+        updatePresentationContext: { window in
+            let provider = PresentationContextProvider(window: window)
+            controller?.presentationContextProvider = provider
+        },
+        performCustomAuthorization: { methods in
+            let stream = AsyncThrowingStream<AuthorizationEvent, Error> { continuation in
                 let request = ASAuthorizationAppleIDProvider().createRequest()
                 controller = ASAuthorizationController(authorizationRequests: [request])
                 controller?.customAuthorizationMethods = methods
-                var delegate: Optional = Delegate(subscriber: subscriber)
+                let delegate = Observer(continuation: continuation)
                 controller?.delegate = delegate
                 controller?.performRequests()
-
-                return AnyCancellable {
-                    delegate = nil
+                continuation.onTermination = { [request = UncheckedSendable(request)] _ in
                     controller = nil
+                    _ = delegate
                 }
             }
-            .share()
-            .eraseToEffect()
-    }
-  )
+            guard let response = try await stream.first(where: { _ in true })
+            else { throw CancellationError() }
+            return response
+        }
+    )
 
     private static var controller: ASAuthorizationController?
 }
 #elseif os(iOS)
 extension AuthorizationControllerClient {
-  public static let live = Self(
-    performRequest: { options in
-            .run { subscriber in
+    public static let live = Self(
+        performRequest: { options in
+            let stream = AsyncThrowingStream<AuthorizationEvent, Error> { continuation in
                 let request = ASAuthorizationAppleIDProvider().createRequest()
                 request.requestedOperation = options.operation
                 request.requestedScopes = options.scopes
                 controller = ASAuthorizationController(authorizationRequests: [request])
-                var delegate: Optional = Delegate(subscriber: subscriber)
+                let delegate = Observer(continuation: continuation)
+                controller?.delegate = delegate
+                controller?.performRequests()
+                continuation.onTermination = { [request = UncheckedSendable(request)] _ in
+                    controller = nil
+                    _ = delegate
+                }
+            }
+            guard let response = try await stream.first(where: { _ in true })
+            else { throw CancellationError() }
+            return response
+        },
+        performExistingAccountSetup: {
+            let stream = AsyncThrowingStream<AuthorizationEvent, Error> { continuation in
+                let request = ASAuthorizationAppleIDProvider().createRequest()
+                controller = ASAuthorizationController(authorizationRequests: [request])
+                let delegate = Observer(continuation: continuation)
                 controller?.delegate = delegate
                 controller?.performRequests()
 
-                return AnyCancellable {
-                    delegate = nil
+                continuation.onTermination = { [request = UncheckedSendable(request)] _ in
                     controller = nil
+                    _ = delegate
                 }
             }
-            .share()
-            .eraseToEffect()
-    },
-    performExistingAccountSetup: .run { subscriber in
-        let request = ASAuthorizationAppleIDProvider().createRequest()
-        controller = ASAuthorizationController(authorizationRequests: [request])
-        var delegate: Optional = Delegate(subscriber: subscriber)
-        controller?.delegate = delegate
-        controller?.performRequests()
-
-        return AnyCancellable {
-            delegate = nil
-            controller = nil
+            guard let response = try await stream.first(where: { _ in true })
+            else { throw CancellationError() }
+            return response
+        },
+        updatePresentationContext: { window in
+            let provider = PresentationContextProvider(window: window)
+            controller?.presentationContextProvider = provider
         }
-    }
-    .share()
-    .eraseToEffect(),
-    updatePresentationContext: { window in
-            .fireAndForget {
-                let provider = PresentationContextProvider(window: window)
-                controller?.presentationContextProvider = provider
-            }
-    }
-  )
+    )
 
     private static var controller: ASAuthorizationController?
 }
 #else
 extension AuthorizationControllerClient {
-  public static let live = Self(
-    performRequest: { options in
-            .run { subscriber in
+    public static let live = Self(
+        performRequest: { options in
+            let stream = AsyncThrowingStream<AuthorizationEvent, Error> { continuation in
                 let request = ASAuthorizationAppleIDProvider().createRequest()
                 request.requestedOperation = options.operation
                 request.requestedScopes = options.scopes
                 controller = ASAuthorizationController(authorizationRequests: [request])
-                var delegate: Optional = Delegate(subscriber: subscriber)
+                let delegate = Observer(continuation: continuation)
                 controller?.delegate = delegate
                 controller?.performRequests()
-
-                return AnyCancellable {
-                    delegate = nil
+                continuation.onTermination = { [request = UncheckedSendable(request)] _ in
                     controller = nil
+                    _ = delegate
                 }
             }
-            .share()
-            .eraseToEffect()
-    },
-    performExistingAccountSetup: .run { subscriber in
-        let request = ASAuthorizationAppleIDProvider().createRequest()
-        controller = ASAuthorizationController(authorizationRequests: [request])
-        var delegate: Optional = Delegate(subscriber: subscriber)
-        controller?.delegate = delegate
-        controller?.performRequests()
-
-        return AnyCancellable {
-            delegate = nil
-            controller = nil
+            guard let response = try await stream.first(where: { _ in true })
+            else { throw CancellationError() }
+            return response
+        },
+        performExistingAccountSetup: {
+            let stream = AsyncThrowingStream<AuthorizationEvent, Error> { continuation in
+                let request = ASAuthorizationAppleIDProvider().createRequest()
+                controller = ASAuthorizationController(authorizationRequests: [request])
+                let delegate = Observer(continuation: continuation)
+                controller?.delegate = delegate
+                controller?.performRequests()
+                continuation.onTermination = { [request = UncheckedSendable(request)] _ in
+                    controller = nil
+                    _ = delegate
+                }
+            }
+            guard let response = try await stream.first(where: { _ in true })
+            else { throw CancellationError() }
+            return response
         }
-    }
-    .share()
-    .eraseToEffect()
-  )
+    )
 
     private static var controller: ASAuthorizationController?
 }
 #endif
 extension AuthorizationControllerClient {
-    #if os(iOS) || os(tvOS)
+#if os(iOS) || os(tvOS)
     final class PresentationContextProvider: NSObject, ASAuthorizationControllerPresentationContextProviding {
         let window: UIWindowScene
 
@@ -193,52 +194,52 @@ extension AuthorizationControllerClient {
             return ASPresentationAnchor(windowScene: window)
         }
     }
-    #endif
-    final class Delegate: NSObject, ASAuthorizationControllerDelegate {
-        let subscriber: Effect<DelegateEvent, Never>.Subscriber
+#endif
+    private class Observer: NSObject, ASAuthorizationControllerDelegate {
+        let continuation: AsyncThrowingStream<AuthorizationEvent, Error>.Continuation
 
-        init(subscriber: Effect<DelegateEvent, Never>.Subscriber) {
-            self.subscriber = subscriber
+        init(continuation: AsyncThrowingStream<AuthorizationEvent, Error>.Continuation) {
+            self.continuation = continuation
         }
 
         func authorizationController(
             controller: ASAuthorizationController,
-            didCompleteWithAuthorization authorization: ASAuthorization
-        ){
+            didCompleteWithAuthorization authorization: ASAuthorization)
+        {
             switch authorization.credential {
             case let appleIdCredential as ASAuthorizationAppleIDCredential:
                 if let _ = appleIdCredential.email, let _ = appleIdCredential.fullName {
-                    subscriber.send(.register(appleIdCredential))
+                    self.continuation.yield(.register(appleIdCredential))
                 } else {
-                    subscriber.send(.signIn(appleIdCredential))
+                    self.continuation.yield(.signIn(appleIdCredential))
                 }
                 break
             case let passwordCredential as ASPasswordCredential:
-                subscriber.send(.signInPassword(passwordCredential))
+                self.continuation.yield(.signInPassword(passwordCredential))
                 break
             default:
                 break
 
             }
-            self.subscriber.send(completion: .finished)
+            self.continuation.finish()
         }
 
         func authorizationController(
             controller: ASAuthorizationController,
             didCompleteWithError error: Error
         ) {
-            self.subscriber.send(.didFailWithError(error as NSError))
-            self.subscriber.send(completion: .finished)
+            self.continuation.yield(.didFailWithError(error as NSError))
+            self.continuation.finish()
         }
 
-        #if os(tvOS)
+#if os(tvOS)
         func authorizationController(
             _ controller: ASAuthorizationController,
             didCompleteWithCustomMethod method: ASAuthorizationCustomMethod
         ) {
-            self.subscriber.send(.didComplete(method))
-            self.subscriber.send(completion: .finished)
+            self.continuation.yield(.didComplete(method))
+            self.continuation.finish()
         }
-        #endif
+#endif
     }
 }

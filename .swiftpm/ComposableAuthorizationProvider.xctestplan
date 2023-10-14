@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "F55BF820-3485-47A8-887B-B9F5776E7E8B",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "ComposableAuthorizationProviderTests",
+        "name" : "ComposableAuthorizationProviderTests"
+      }
+    }
+  ],
+  "version" : 1
+}
