@@ -14,45 +14,49 @@ ComposableAuthorizationProvider is available via [Swift Package Manager](https:/
 
 ## Usage
 
-`ComposableAuthorizationProvider` gives you access to a new provider called `AuthorizationProvider`. It can be integrated within your composable app like this : 
+`ComposableAuthorizationProvider` gives you access to a new provider called `AuthorizationProvider`. It can be integrated within your composable app like this: 
 
-### Step 1 - Add to Environment
+### Step 1 - Add to Reducer
 ```swift
-public struct SomeEnvironment {
-    public var authorizationProvider: AuthorizationProvider
-    
-    public init(
-        authorizationProvider: AuthorizationProvider = .live
-    ) {
-        self.authorizationProvider = authorizationProvider
-    }
+public struct SomeReducer {
+    @Dependency(\.authorizationProvider) var authorizationProvider
 }
 ```
 
 ### Step 2 - Add to actions
 ```swift
-public enum SomeAction: Equatable {
+public enum Action: Equatable {
+    /// Triggers existing credential check
     case someAction
+    /// Triggers sign in flow
     case someSignInAction
-    case authorizationProvider(AuthorizationControllerClient.DelegateEvent)
+    /// Handles ``AuthorizationProvider`` responses
+    case authorizationProvider(AuthorizationControllerClient.AuthorizationEvent)
 }
 ```
 
 ### Step 3 - Add logic to reducer
 ```swift
-public let reducer = Reducer<SomeState, SomeAction, SomeEnvironment>.combine(
-    Reducer { state, action, environment in
+public var body: some Reducer<State, Action> {
+    Reduce { state, action in
         switch action {
         case .someAction:
-            return environment.authorizationProvider.getCredentialState("someUserId").eraseToEffect().map { state in
-                // TODO: Decide when you want to perform credential challenges
+            return .run { send in 
+                // Get current state
+                let state = await authorizationProvider.getCredentialState("someUserId")
+                
+                TODO: Decide when you want to perform credential challenges
                 
                 // Make a credential challenge
-                environment.authorizationProvider.authorizationController.performRequest(.standard).map(SomeAction.authorizationProvider)
+                let authorization = try? await authorizationProvider.authorizationController.performRequest(.standard)
+                return .send(.authorizationProvider(authorization))
             }
         case .someSignInAction:
-            // Make a credential challenge
-            return environment.authorizationProvider.authorizationController.performRequest(.standard).map(SomeAction.authorizationProvider)
+            return .run { send in
+                // Make a credential challenge
+                let authorization = try? await authorizationProvider.authorizationController.performRequest(.standard).map(SomeAction.authorizationProvider)
+                return .send(.authorizationProvider(authorization))
+            }
         }
     },
     ...
@@ -62,21 +66,21 @@ public let reducer = Reducer<SomeState, SomeAction, SomeEnvironment>.combine(
 ### Step 4 - Add the sign in button to a view
 ```swift
 public var body: some View {
-        ZStack{
-            Color.accentColor.edgesIgnoringSafeArea(.all)
-            VStack {
-                Spacer()
-                if viewStore.loginButtonVisible {
-                    SignInWithAppleButton(type: .default, style: .white)
-                        .frame(width: UIScreen.main.bounds.width / 2, height: 30)
-                        .onTapGesture {
-                            self.viewStore.send(.someSignInAction)
-                        }
-                }
+    ZStack{
+        Color.accentColor.edgesIgnoringSafeArea(.all)
+        VStack {
+            Spacer()
+            if viewStore.loginButtonVisible {
+                SignInWithAppleButton(type: .default, style: .white)
+                    .frame(width: UIScreen.main.bounds.width / 2, height: 30)
+                    .onTapGesture {
+                        // Send the sign in flow action when pressed
+                        self.viewStore.send(.someSignInAction)
+                    }
             }
         }
     }
-
+}
 ```
 
 ## License
