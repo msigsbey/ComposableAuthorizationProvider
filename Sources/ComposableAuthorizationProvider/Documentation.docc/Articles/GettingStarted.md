@@ -6,16 +6,10 @@
 
 Follow the steps below to set up your own ``AuthorizationProvider`` and utilize Sign in with Apple today.
 
-### Step 1 - Add to feature reducer
+### Step 1 - Add to Reducer
 ```swift
-public struct Feature: ReducerProtocol {
-    public var authorizationProvider: AuthorizationProvider
-    
-    public init(
-        authorizationProvider: AuthorizationProvider = .live
-    ) {
-        self.authorizationProvider = authorizationProvider
-    }
+public struct SomeReducer {
+    @Dependency(\.authorizationProvider) var authorizationProvider
 }
 ```
 
@@ -27,26 +21,32 @@ public enum Action: Equatable {
     /// Triggers sign in flow
     case someSignInAction
     /// Handles ``AuthorizationProvider`` responses
-    case authorizationProvider(AuthorizationControllerClient.DelegateEvent)
+    case authorizationProvider(AuthorizationControllerClient.AuthorizationEvent)
 }
 ```
 
 ### Step 3 - Add logic to reducer
 ```swift
-public var body: Reduce<State, Action> {
+public var body: some Reducer<State, Action> {
     Reduce { state, action in
         switch action {
         case .someAction:
-            // Get the existing credential for the user if any exists
-            return authorizationProvider.getCredentialState("someUserId").eraseToEffect().map { state in
-                // TODO: Decide when you want to perform credential challenges
+            return .run { send in 
+                // Get current state
+                let state = await authorizationProvider.getCredentialState("someUserId")
+                
+                TODO: Decide when you want to perform credential challenges
                 
                 // Make a credential challenge
-                authorizationProvider.authorizationController.performRequest(.standard).map(SomeAction.authorizationProvider)
+                let authorization = try? await authorizationProvider.authorizationController.performRequest(.standard)
+                return .send(.authorizationProvider(authorization))
             }
         case .someSignInAction:
-            // Make a credential challenge
-            return authorizationProvider.authorizationController.performRequest(.standard).map(SomeAction.authorizationProvider)
+            return .run { send in
+                // Make a credential challenge
+                let authorization = try? await authorizationProvider.authorizationController.performRequest(.standard).map(SomeAction.authorizationProvider)
+                return .send(.authorizationProvider(authorization))
+            }
         }
     },
     ...
