@@ -19,4 +19,8 @@ jobs:
     - name: Build
       run: swift build -v
     - name: Run tests
-      run: swift test -v
+      run: xcodebuild -scheme ComposableAuthorizationProvider  -destination 'platform=iOS Simulator,name=iPhone 14 Pro' -resultBundlePath TestResults test
+    - uses: kishikawakatsumi/xcresulttool@v1
+      with:
+        path: TestResults.xcresult
+      if: success() || failure()
