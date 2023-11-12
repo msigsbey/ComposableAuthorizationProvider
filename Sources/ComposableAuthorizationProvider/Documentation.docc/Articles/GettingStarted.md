@@ -35,7 +35,7 @@ public var body: some Reducer<State, Action> {
                 // Get current state
                 let state = await authorizationProvider.getCredentialState("someUserId")
                 
-                TODO: Decide when you want to perform credential challenges
+                // TODO: Decide when you want to perform credential challenges
                 
                 // Make a credential challenge
                 let authorization = try? await authorizationProvider.authorizationController.performRequest(.standard)
